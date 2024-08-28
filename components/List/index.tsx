@@ -130,17 +130,17 @@ export default function CardList() {
         ) : (
           <ul>
             {data.map((item: Item) => (
-              <li
+              <button
                 key={item.id}
                 className={`flex items-center mb-2 justify-between text-lg ${item.cantando ? '' : ''}`}
-                style={{ backgroundColor: 'transparent' }}
+                style={{ backgroundColor: 'transparent', border: 'none', padding: '10px', width: '100%', textAlign: 'left' }}
                 onClick={() => item.cantando ? handleRedBallClick(item.id) : handleTransparentBallClick(item.id)}
               >
                 <span>{item.name} - <span className="text-blue-500">{item.music || "Não informado"}</span></span>
                 <div
                   className={`w-4 h-4 border-2 rounded-full ${item.cantando ? 'bg-red-600' : 'border-gray-600'}`}
                 />
-              </li>
+              </button>
             ))}
           </ul>
         )}
@@ -150,7 +150,7 @@ export default function CardList() {
       </CardBody>
       <Divider />
       <CardFooter className="flex justify-between items-center">
-        <p className="text-lg">Próximo a cantar:<strong>{upcomingName}</strong></p>
+        <p className="text-lg">Próximo a cantar: <strong>{upcomingName}</strong></p>
       </CardFooter>
     </Card>
   );
