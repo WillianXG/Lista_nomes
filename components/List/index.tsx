@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Checkbox, Button } from "@nextui-org/react";
+import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Button } from "@nextui-org/react";
 import { supabase } from "../../lib/supabaseClient"; // Adjust path as needed
-import { revalidatePath } from "next/cache";
 
 export default function CardList() {
-  const [data, setData] = useState<{ id: number; name: string; cantou: boolean; music: string }[]>([]);
+  const [data, setData] = useState<{ id: number; name: string; cantou: boolean; music: string; order_position: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [clicks, setClicks] = useState(0); // Track number of clicks
-  const [lastClickTime, setLastClickTime] = useState<number | null>(null); // Track the time of the last click
 
   const fetchData = async () => {
     const { data, error } = await supabase
       .from('test_table') // Replace with your table name
-      .select('id, name, cantou, music')
-      .order('id', { ascending: true }); // Order by id from smallest to largest
+      .select('id, name, cantou, music, order_position')
+      .order('order_position', { ascending: true }); // Order by order_position from smallest to largest
 
     if (error) {
       console.error("Error fetching data:", error);
@@ -23,45 +20,36 @@ export default function CardList() {
     setLoading(false);
   };
 
-  const handleCheckboxChange = async (id: number, checked: boolean) => {
-    if (checked) {
-      const { error } = await supabase
-        .from('test_table') // Replace with your table name
-        .update({ cantou: true })
-        .eq('id', id);
+  const handleSingButtonClick = async (id: number) => {
+    // Update local state immediately
+    setData(prevData => {
+      const updatedData = prevData.map(item =>
+        item.id === id ? { ...item, cantou: true } : item
+      );
 
-      if (error) {
-        console.error("Error updating data:", error);
-      } else {
-        fetchData(); // Reload data after update
+      // Move the marked item to the end of the list
+      const updatedItems = updatedData.filter(item => item.id !== id);
+      const markedItem = updatedData.find(item => item.id === id);
+
+      if (markedItem) {
+        const newOrderedData = [...updatedItems, { ...markedItem, cantou: true }];
+        return newOrderedData; // Return the updated data with the item moved to the end
       }
-    }
-  };
 
-  const handleReset = async () => {
-    const now = Date.now();
-    if (lastClickTime && now - lastClickTime < 3000) {
-      setClicks(clicks + 1);
+      return updatedData;
+    });
+
+    // Update the database
+    const { error } = await supabase
+      .from('test_table') // Replace with your table name
+      .update({ cantou: true, order_position: data.length }) // Update `cantou` and `order_position`
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating data:", error);
     } else {
-      setClicks(1);
-    }
-    setLastClickTime(now);
-
-    if (clicks >= 1) {
-      if (clicks >= 2) {
-        const { error } = await supabase
-          .from('test_table') // Replace with your table name
-          .update({ cantou: false })
-          .neq('cantou', false); // Add condition to ensure update only affects the necessary rows
-        window.location.reload();
-
-        if (error) {
-          console.error("Error resetting data:", error);
-        } else {
-          // Update local state to reflect that all checkboxes are unchecked
-          setData(data.map(item => ({ ...item, cantou: false })));
-        }
-      }
+      // Reload data from API to ensure everything is correct
+      fetchData();
     }
   };
 
@@ -103,30 +91,29 @@ export default function CardList() {
             src="/blitz.ico"
             width={40}
           />
-          <div className="flex justify-between  items-center w-full">
+          <div className="flex justify-between items-center w-full">
             <p className="text-xl">Lista</p>
             <p className="text-xl">|</p>
             <p className="text-xl">Total de pessoas: ({totalPeople})</p>
           </div>
-
         </div>
       </CardHeader>
       <Divider />
       <CardBody className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
         {data.length === 0 ? (
-          <p className="text-lg">No data available.</p>
+          <p className="text-xl self-center">Lista Vazia</p>
         ) : (
           <ul>
             {data.map((item) => (
               <li key={item.id} className="flex items-center mb-2 justify-between text-lg">
-                <span>{item.name} - <span className="text-blue-500">{item.music || "não informado"}</span></span>
-                <Checkbox
-                  checked={item.cantou}
-                  onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
+                <span>{item.name} - <span className="text-blue-500">{item.music || "Não informado"}</span></span>
+                <Button
+                  size="sm"
                   color="primary"
-                  className={`custom-checkbox ${item.cantou ? 'checked' : ''}`}
-                  isDisabled={item.cantou} // Disable checkbox if `cantou` is true
-                />
+                  onClick={() => handleSingButtonClick(item.id)}
+                >
+                  Cantar
+                </Button>
               </li>
             ))}
           </ul>
@@ -135,13 +122,6 @@ export default function CardList() {
       <Divider />
       <CardFooter className="flex justify-between items-center">
         <p className="text-lg">Próximo a cantar: <strong>{upcomingName}</strong></p>
-        <Button
-          onClick={handleReset}
-          className="reset-button text-lg"
-          style={{ marginLeft: 'auto' }} // Push button to the right
-        >
-          Nova Rodada
-        </Button>
       </CardFooter>
     </Card>
   );
