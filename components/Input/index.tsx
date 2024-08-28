@@ -1,27 +1,58 @@
 import React, { useState } from "react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure, Checkbox, Input, Link } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure, Checkbox, Input } from "@nextui-org/react";
+import { createClient } from "@supabase/supabase-js";
+
+// Configure o Supabase
+const supabaseUrl = 'https://ntfnizmqhsvxthxiyfxh.supabase.co'; // Substitua com sua URL do Supabase
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zm5pem1xaHN2eHRoeGl5ZnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ3OTY4ODksImV4cCI6MjA0MDM3Mjg4OX0.m8KqtcK6ndfXTqXPahW9oWD2UQpga2E3fR2a5aTegvg'; // Substitua com sua chave pública
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const App: React.FC = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [showMusicInput, setShowMusicInput] = useState(false);
   const [name, setName] = useState("");
-  const [musicInfo, setMusicInfo] = useState("");
+  const [music, setMusic] = useState("");
 
   const handleCheckboxChange = () => {
     setShowMusicInput(!showMusicInput);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // Captura a hora e os minutos atuais e formata corretamente
+    const currentDate = new Date();
+    const hours = String(currentDate.getHours()).padStart(2, '0');
+    const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+    const hoursAndMinutes = `${hours}:${minutes}:00`;
+
     // Dados a serem enviados
-    const dataToSend = { name, musicInfo };
+    const dataToSend: { name: string; music?: string; date: string } = { 
+      name, 
+      date: hoursAndMinutes 
+    };
+
+    if (music) {
+      dataToSend.music = music;
+    }
+
     console.log("Enviando dados:", dataToSend);
 
-    // Código para enviar para a API
-    // fetch('API_URL', { method: 'POST', body: JSON.stringify(dataToSend) });
+    try {
+      const { error } = await supabase
+        .from('test_table') // Substitua pelo nome da sua tabela
+        .insert([dataToSend]);
+
+      if (error) {
+        console.error("Erro ao enviar dados:", error);
+      } else {
+        console.log("Dados enviados com sucesso!");
+      }
+    } catch (error) {
+      console.error("Erro inesperado:", error);
+    }
 
     // Limpar os campos após o envio
     setName("");
-    setMusicInfo("");
+    setMusic("");
     setShowMusicInput(false);
 
     onOpenChange(); // Fechar o modal após o envio
@@ -62,8 +93,8 @@ const App: React.FC = () => {
                     label="Número ou Nome da Música"
                     placeholder="Digite o número ou nome da música"
                     variant="bordered"
-                    value={musicInfo}
-                    onChange={(e) => setMusicInfo(e.target.value)}
+                    value={music}
+                    onChange={(e) => setMusic(e.target.value)}
                   />
                 )}
               </ModalBody>
