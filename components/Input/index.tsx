@@ -60,7 +60,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Button onPress={onOpen} color="primary">Open Modal</Button>
+      <Button className="w-2/12" onPress={onOpen} color="primary">Novo Cantor</Button>
       <Modal 
         isOpen={isOpen} 
         onOpenChange={onOpenChange}

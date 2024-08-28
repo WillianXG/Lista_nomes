@@ -9,10 +9,10 @@ export default function DefaultLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex flex-col h-screen px-6"> {/* Adicione padding horizontal */}
+    <div className="relative flex flex-col h-screen px-6 items-center self-center"> {/* Adicione padding horizontal */}
       <Head />
       <Navbar />
-      <main className="flex flex-col flex-grow justify-between pt-16">
+      <main className="flex flex-col flex-grow justify-between pt-16 w-full items-center">
         {children}
         <footer className="w-full flex items-center justify-center py-3 mt-4">
           <Link
