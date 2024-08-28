@@ -13,8 +13,8 @@ export default function CardList() {
     const { data, error } = await supabase
       .from('test_table') // Replace with your table name
       .select('id, name, cantou, music')
-      .order('date', { ascending: true }); // Order by date from oldest to newest
-
+      .order('id', { ascending: true }); // Order by id from smallest to largest
+  
     if (error) {
       console.error("Error fetching data:", error);
     } else {
@@ -22,7 +22,7 @@ export default function CardList() {
     }
     setLoading(false);
   };
-
+  
   const handleCheckboxChange = async (id: number, checked: boolean) => {
     if (checked) {
       const { error } = await supabase

@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure, Checkbox, Input } from "@nextui-org/react";
 import { createClient } from "@supabase/supabase-js";
 
-// Configure o Supabase
-const supabaseUrl = 'https://ntfnizmqhsvxthxiyfxh.supabase.co'; // Substitua com sua URL do Supabase
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zm5pem1xaHN2eHRoeGl5ZnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ3OTY4ODksImV4cCI6MjA0MDM3Mjg4OX0.m8KqtcK6ndfXTqXPahW9oWD2UQpga2E3fR2a5aTegvg'; // Substitua com sua chave pública
+// Configure Supabase
+const supabaseUrl = 'https://ntfnizmqhsvxthxiyfxh.supabase.co'; // Replace with your Supabase URL
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Zm5pem1xaHN2eHRoeGl5ZnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ3OTY4ODksImV4cCI6MjA0MDM3Mjg4OX0.m8KqtcK6ndfXTqXPahW9oWD2UQpga2E3fR2a5aTegvg'; // Replace with your Supabase key
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const App: React.FC = () => {
@@ -18,17 +18,22 @@ const App: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Captura a hora e os minutos atuais e formata corretamente
+    if (!name.trim()) {
+      alert("Nome é obrigatório");
+      return;
+    }
+
+    // Capture the current date and time
     const currentDate = new Date();
     const hours = String(currentDate.getHours()).padStart(2, '0');
     const minutes = String(currentDate.getMinutes()).padStart(2, '0');
-    const hoursAndMinutes = `${hours}:${minutes}:00`;
-    window.location.reload();
+    const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+    const dateTime = `${currentDate.toISOString().split('T')[0]} ${hours}:${minutes}:${seconds}`;
 
-    // Dados a serem enviados
+    // Data to send
     const dataToSend: { name: string; music?: string; date: string } = { 
       name, 
-      date: hoursAndMinutes 
+      date: dateTime 
     };
 
     if (music) {
@@ -39,24 +44,26 @@ const App: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('test_table') // Substitua pelo nome da sua tabela
+        .from('test_table') // Replace with your table name
         .insert([dataToSend]);
 
       if (error) {
         console.error("Erro ao enviar dados:", error);
       } else {
         console.log("Dados enviados com sucesso!");
+        // Optionally, you can reload the page or refresh data here
+        // window.location.reload(); // Use this if you need to reload the entire page
       }
     } catch (error) {
       console.error("Erro inesperado:", error);
     }
 
-    // Limpar os campos após o envio
+    // Clear fields after submission
     setName("");
     setMusic("");
     setShowMusicInput(false);
 
-    onOpenChange(); // Fechar o modal após o envio
+    onOpenChange(); // Close the modal after submission
   };
 
   return (
@@ -113,6 +120,6 @@ const App: React.FC = () => {
       </Modal>
     </>
   );
-}
+};
 
 export default App;
