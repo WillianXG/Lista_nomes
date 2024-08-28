@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Checkbox, Button } from "@nextui-org/react"; 
+import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Checkbox, Button } from "@nextui-org/react";
 import { supabase } from "../../lib/supabaseClient"; // Adjust path as needed
 import { revalidatePath } from "next/cache";
 
@@ -14,7 +14,7 @@ export default function CardList() {
       .from('test_table') // Replace with your table name
       .select('id, name, cantou, music')
       .order('id', { ascending: true }); // Order by id from smallest to largest
-  
+
     if (error) {
       console.error("Error fetching data:", error);
     } else {
@@ -22,7 +22,7 @@ export default function CardList() {
     }
     setLoading(false);
   };
-  
+
   const handleCheckboxChange = async (id: number, checked: boolean) => {
     if (checked) {
       const { error } = await supabase
@@ -53,7 +53,7 @@ export default function CardList() {
           .from('test_table') // Replace with your table name
           .update({ cantou: false })
           .neq('cantou', false); // Add condition to ensure update only affects the necessary rows
-          window.location.reload();
+        window.location.reload();
 
         if (error) {
           console.error("Error resetting data:", error);
@@ -103,10 +103,11 @@ export default function CardList() {
             src="/blitz.ico"
             width={40}
           />
-          <div className="flex flex-col">
-            <p className="text-xl">Lista ({totalPeople})</p>
-            <p className="text-lg text-default-500">Blitz Videoke</p>
+          <div className="flex justify-between  items-center w-full">
+            <p className="text-xl">Lista</p>
+            <p className="text-xl">Total de pessoas ({totalPeople})</p>
           </div>
+
         </div>
       </CardHeader>
       <Divider />
