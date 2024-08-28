@@ -150,7 +150,7 @@ export default function CardList() {
       </CardBody>
       <Divider />
       <CardFooter className="flex justify-between items-center">
-        <p className="text-lg">Próximo a cantar: <strong>{upcomingName}</strong></p>
+        <p className="text-lg">Próximo a cantar:<strong>{upcomingName}</strong></p>
       </CardFooter>
     </Card>
   );
