@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Button } from "@nextui-org/react";
+import { Card, CardHeader, CardBody, CardFooter, Divider, Image } from "@nextui-org/react";
 import { supabase } from "../../lib/supabaseClient"; // Ajuste o caminho conforme necessário
 
+type Item = {
+  id: number;
+  name: string;
+  cantando: boolean;
+  music: string;
+  order_position: number;
+};
+
 export default function CardList() {
-  const [data, setData] = useState<{ id: number; name: string; cantou: boolean; music: string; order_position: number }[]>([]);
+  const [data, setData] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [highlightedId, setHighlightedId] = useState<number | null>(null);
+  const [currentCantandoId, setCurrentCantandoId] = useState<number | null>(null);
+  const [showWaitingMessage, setShowWaitingMessage] = useState(false);
 
   const fetchData = async () => {
     const { data, error } = await supabase
       .from('test_table') // Substitua pelo nome da sua tabela
-      .select('id, name, cantou, music, order_position')
-      .order('order_position', { ascending: true }); // Ordenar por order_position do menor para o maior
+      .select('id, name, cantando, music, order_position')
+      .order('order_position', { ascending: true });
 
     if (error) {
       console.error("Erro ao buscar dados:", error);
@@ -21,64 +30,58 @@ export default function CardList() {
     setLoading(false);
   };
 
-  const handleSingButtonClick = async (id: number) => {
-    setHighlightedId(id);
+  const handleTransparentBallClick = async (id: number) => {
+    if (currentCantandoId !== null && currentCantandoId !== id) {
+      setShowWaitingMessage(true);
+      return;
+    }
 
-    // Atualizar o estado local para destacar o item
-    setData(prevData => prevData.map(item =>
-      item.id === id ? { ...item, cantou: true } : item
-    ));
-
-    // Atualizar o banco de dados
-    const { error } = await supabase
+    // Atualizar o banco de dados para iniciar a pessoa cantando
+    await supabase
       .from('test_table') // Substitua pelo nome da sua tabela
-      .update({ cantou: true }) // Atualiza apenas o cantou
+      .update({ cantando: true })
       .eq('id', id);
 
-    if (error) {
-      console.error("Erro ao atualizar dados:", error);
-    }
-  };
-
-  const handleFinishedButtonClick = async (id: number) => {
-    // Atualizar o estado local para mover o item para o final
+    // Atualizar o estado local
     setData(prevData => {
       const updatedData = prevData.map(item =>
-        item.id === id ? { ...item, cantou: false } : item
+        item.id === id ? { ...item, cantando: true } : item
       );
-
-      // Mover o item marcado para o final da lista
-      const updatedItems = updatedData.filter(item => item.id !== id);
-      const markedItem = updatedData.find(item => item.id === id);
-
-      if (markedItem) {
-        const newOrderedData = [...updatedItems, { ...markedItem, order_position: data.length }];
-        return newOrderedData; // Retorna os dados atualizados com o item movido para o final
-      }
-
-      return updatedData;
+      return updatedData.sort((a, b) => a.order_position - b.order_position);
     });
 
-    // Atualizar o banco de dados
-    const { error } = await supabase
-      .from('test_table') // Substitua pelo nome da sua tabela
-      .update({ order_position: data.length, cantou: false }) // Atualiza order_position e cantou
-      .eq('id', id);
+    setCurrentCantandoId(id);
+    setShowWaitingMessage(false);
+  };
 
-    if (error) {
-      console.error("Erro ao atualizar dados:", error);
-    } else {
-      // Recarregar dados da API para garantir que tudo esteja correto
-      fetchData();
+  const handleRedBallClick = async (id: number) => {
+    if (currentCantandoId !== null && currentCantandoId !== id) {
+      setShowWaitingMessage(true);
+      return;
     }
 
-    setHighlightedId(null);
+    const maxOrderPosition = Math.max(...data.map(item => item.order_position), 0);
+    const updatedOrderPosition = maxOrderPosition + 1;
+
+    await supabase
+      .from('test_table') // Substitua pelo nome da sua tabela
+      .update({ cantando: false, order_position: updatedOrderPosition })
+      .eq('id', id);
+
+    setData(prevData => {
+      const updatedData = prevData.map(item =>
+        item.id === id ? { ...item, cantando: false, order_position: updatedOrderPosition } : item
+      );
+      return updatedData.sort((a, b) => a.order_position - b.order_position);
+    });
+
+    setShowWaitingMessage(false);
+    setCurrentCantandoId(null);
   };
 
   useEffect(() => {
     fetchData();
 
-    // Listener para mudanças na tabela usando Realtime
     const channel = supabase
       .channel('custom-insert-channel')
       .on(
@@ -86,19 +89,19 @@ export default function CardList() {
         { event: 'INSERT', schema: 'public', table: 'test_table' },
         (payload) => {
           console.log('Novo registro adicionado:', payload.new);
-          fetchData(); // Recarregar dados quando algo é adicionado
+          fetchData();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel); // Limpar o canal quando o componente for desmontado
+      supabase.removeChannel(channel);
     };
   }, []);
 
   if (loading) return <p className="text-lg">Carregando...</p>;
 
-  const upcoming = data.find(item => !item.cantou);
+  const upcoming = data.find(item => !item.cantando);
   const upcomingName = upcoming ? upcoming.name : "Ninguém";
   const totalPeople = data.length;
 
@@ -126,33 +129,23 @@ export default function CardList() {
           <p className="text-xl self-center">Lista Vazia</p>
         ) : (
           <ul>
-            {data.map((item) => (
+            {data.map((item: Item) => (
               <li
                 key={item.id}
-                className={`flex items-center mb-2 justify-between text-lg ${highlightedId === item.id ? 'bg-red-500 transition-all duration-1000' : ''}`}
-                style={{ backgroundColor: highlightedId === item.id ? 'rgba(255, 0, 0, 0.3)' : 'transparent' }}
+                className={`flex items-center mb-2 justify-between text-lg ${item.cantando ? '' : ''}`}
+                style={{ backgroundColor: 'transparent' }}
+                onClick={() => item.cantando ? handleRedBallClick(item.id) : handleTransparentBallClick(item.id)}
               >
                 <span>{item.name} - <span className="text-blue-500">{item.music || "Não informado"}</span></span>
-                {item.cantou ? (
-                  <Button
-                    size="sm"
-                    color="success"
-                    onClick={() => handleFinishedButtonClick(item.id)}
-                  >
-                    Acabou
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    color="primary"
-                    onClick={() => handleSingButtonClick(item.id)}
-                  >
-                    Cantar
-                  </Button>
-                )}
+                <div
+                  className={`w-4 h-4 border-2 rounded-full ${item.cantando ? 'bg-red-600' : 'border-gray-600'}`}
+                />
               </li>
             ))}
           </ul>
+        )}
+        {showWaitingMessage && (
+          <p className="text-red-500 text-center mt-4">Espere a pessoa parar de cantar antes de escolher outra.</p>
         )}
       </CardBody>
       <Divider />
