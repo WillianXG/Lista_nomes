@@ -24,6 +24,7 @@ import {
   SearchIcon,
   Logo,
 } from "@/components/icons";
+import BtnDrop from "./BtnDrop";
 
 export const Navbar = () => {
   const searchInput = (
