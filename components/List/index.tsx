@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Checkbox, Button } from "@nextui-org/react"; 
-import { supabase } from "../../lib/supabaseClient"; // Ajuste o caminho conforme necessário
+import { supabase } from "../../lib/supabaseClient"; // Adjust path as needed
 
 export default function CardList() {
   const [data, setData] = useState<{ id: number; name: string; cantou: boolean; music: string }[]>([]);
@@ -10,9 +10,9 @@ export default function CardList() {
 
   const fetchData = async () => {
     const { data, error } = await supabase
-      .from('test_table') // Substitua pelo nome da sua tabela
+      .from('test_table') // Replace with your table name
       .select('id, name, cantou, music')
-      .order('date', { ascending: true }); // Ordena por data do mais antigo ao mais recente
+      .order('date', { ascending: true }); // Order by date from oldest to newest
 
     if (error) {
       console.error("Error fetching data:", error);
@@ -25,14 +25,14 @@ export default function CardList() {
   const handleCheckboxChange = async (id: number, checked: boolean) => {
     if (checked) {
       const { error } = await supabase
-        .from('test_table') // Substitua pelo nome da sua tabela
+        .from('test_table') // Replace with your table name
         .update({ cantou: true })
         .eq('id', id);
 
       if (error) {
         console.error("Error updating data:", error);
       } else {
-        fetchData(); // Recarregar os dados após a atualização
+        fetchData(); // Reload data after update
       }
     }
   };
@@ -49,14 +49,14 @@ export default function CardList() {
     if (clicks >= 1) {
       if (clicks >= 2) {
         const { error } = await supabase
-          .from('test_table') // Substitua pelo nome da sua tabela
+          .from('test_table') // Replace with your table name
           .update({ cantou: false })
-          .neq('cantou', false); // Adiciona uma condição para garantir que a atualização só afete as linhas que precisam ser alteradas
+          .neq('cantou', false); // Add condition to ensure update only affects the necessary rows
 
         if (error) {
           console.error("Error resetting data:", error);
         } else {
-          fetchData(); // Recarregar os dados após a atualização
+          fetchData(); // Reload data after update
         }
       }
     }
@@ -65,7 +65,7 @@ export default function CardList() {
   useEffect(() => {
     fetchData();
 
-    // Listener para mudanças na tabela usando Realtime
+    // Listener for changes in the table using Realtime
     const channel = supabase
       .channel('custom-insert-channel')
       .on(
@@ -73,13 +73,13 @@ export default function CardList() {
         { event: 'INSERT', schema: 'public', table: 'test_table' },
         (payload) => {
           console.log('New record added:', payload.new);
-          fetchData(); // Recarregar os dados quando algo for adicionado
+          fetchData(); // Reload data when something is added
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel); // Limpar o canal quando o componente for desmontado
+      supabase.removeChannel(channel); // Cleanup the channel when component is unmounted
     };
   }, []);
 
@@ -90,7 +90,7 @@ export default function CardList() {
   const totalPeople = data.length;
 
   return (
-    <Card className="w-[750px] h-[500px] overflow-hidden">
+    <Card className="w-full max-w-[750px] h-[500px] max-h-[calc(300vh-300px)] mb-5 overflow-hidden mx-4 sm:mx-6">
       <CardHeader className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Image
@@ -114,13 +114,13 @@ export default function CardList() {
           <ul>
             {data.map((item) => (
               <li key={item.id} className="flex items-center mb-2 justify-between text-lg">
-                <span>{item.name} - {item.music || "não informado"}</span>
+                <span>{item.name} - <span className="text-blue-500">{item.music || "não informado"}</span></span>
                 <Checkbox
                   checked={item.cantou}
                   onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
                   color="primary"
                   className={`custom-checkbox ${item.cantou ? 'checked' : ''}`}
-                  isDisabled={item.cantou} // Desativa a checkbox se `cantou` for true
+                  isDisabled={item.cantou} // Disable checkbox if `cantou` is true
                 />
               </li>
             ))}
