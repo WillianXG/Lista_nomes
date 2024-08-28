@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Checkbox, Button } from "@nextui-org/react"; 
 import { supabase } from "../../lib/supabaseClient"; // Adjust path as needed
+import { revalidatePath } from "next/cache";
 
 export default function CardList() {
   const [data, setData] = useState<{ id: number; name: string; cantou: boolean; music: string }[]>([]);
@@ -52,11 +53,13 @@ export default function CardList() {
           .from('test_table') // Replace with your table name
           .update({ cantou: false })
           .neq('cantou', false); // Add condition to ensure update only affects the necessary rows
+          window.location.reload();
 
         if (error) {
           console.error("Error resetting data:", error);
         } else {
-          fetchData(); // Reload data after update
+          // Update local state to reflect that all checkboxes are unchecked
+          setData(data.map(item => ({ ...item, cantou: false })));
         }
       }
     }
