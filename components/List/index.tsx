@@ -105,7 +105,8 @@ export default function CardList() {
           />
           <div className="flex justify-between  items-center w-full">
             <p className="text-xl">Lista</p>
-            <p className="text-xl">Total de pessoas ({totalPeople})</p>
+            <p className="text-xl">|</p>
+            <p className="text-xl">Total de pessoas: ({totalPeople})</p>
           </div>
 
         </div>
